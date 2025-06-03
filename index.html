@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Signature avec e-mail</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.5/signature_pad.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      margin: auto;
+    }
+    canvas {
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      width: 100%;
+      height: 150px;
+      background: white;
+      margin-bottom: 10px;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      color: white;
+      border: none;
+    }
+    .clear-btn {
+      background: red;
+    }
+    .submit-btn {
+      background: #007bff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Signature électronique</h2>
+
+    <!-- Champ e-mail requis -->
+    <input type="email" id="email" placeholder="Entrez votre e-mail" required />
+
+    <!-- Zone de signature -->
+    <canvas id="signatureCanvas"></canvas>
+
+    <!-- Boutons -->
+    <button class="clear-btn" onclick="clearSignature()">Effacer la signature</button>
+    <button class="submit-btn" onclick="submitSignature()">Envoyer</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('signatureCanvas');
+    const signaturePad = new SignaturePad(canvas);
+
+    function clearSignature() {
+      signaturePad.clear();
+    }
+
+    function submitSignature() {
+      const email = document.getElementById("email").value.trim();
+
+      // Validation de l'e-mail
+      if (email === "" || !email.includes("@")) {
+        alert("Veuillez entrer une adresse e-mail valide.");
+        return;
+      }
+
+      // Vérifie que l'utilisateur a bien signé
+      if (signaturePad.isEmpty()) {
+        alert("Veuillez signer avant d'envoyer !");
+        return;
+      }
+
+      const signatureData = signaturePad.toDataURL(); // Image en base64
+
+      // Envoi à Zapier
+      fetch("https://hooks.zapier.com/hooks/catch/20566558/2vrkrpe/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: email,
+          signature: signatureData
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("Signature envoyée avec succès !");
+          signaturePad.clear();
+          document.getElementById("email").value = "";
+        } else {
+          alert("Erreur lors de l'envoi. Code : " + res.status);
+        }
+      })
+      .catch(error => {
+        console.error("Erreur :", error);
+        alert("Erreur réseau. Veuillez réessayer.");
+      });
+    }
+  </script>
+
+</body>
+</html>
